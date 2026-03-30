@@ -13,3 +13,4 @@ build/
 # Nsight Compute profiling 数据
 *.ncu-rep
 *.nsys-rep
+nsys_tool

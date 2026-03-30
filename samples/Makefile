@@ -6,7 +6,8 @@ NVCCFLAGS := -O2 -lineinfo
 
 TARGETS := \
     $(BUILD)/cuda_graph_demo \
-    $(BUILD)/cuda_stream_demo
+    $(BUILD)/cuda_stream_demo \
+    $(BUILD)/vector_add
 
 all: $(BUILD) $(TARGETS)
 
@@ -17,6 +18,9 @@ $(BUILD)/cuda_graph_demo: cuda_graph_demo.cu
 	nvcc $(NVCCFLAGS) -o $@ $< -lm
 
 $(BUILD)/cuda_stream_demo: cuda_stream_demo.cu
+	nvcc $(NVCCFLAGS) -o $@ $< -lm
+
+$(BUILD)/vector_add: vector_add.cu
 	nvcc $(NVCCFLAGS) -o $@ $< -lm
 
 clean:
