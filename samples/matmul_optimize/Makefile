@@ -1,5 +1,9 @@
 BUILD := build
 
+# -lineinfo: 保留源码行号信息，Nsight Compute 可将性能数据对应到具体代码行
+# -O2:       保持优化，profiling 结果才反映真实性能（-G 会禁用优化，不适合 profiling）
+NVCCFLAGS := -O2 -lineinfo
+
 TARGETS := \
     $(BUILD)/matmul_sharemem \
     $(BUILD)/matmul_blocksize32 \
@@ -13,21 +17,22 @@ $(BUILD):
 	mkdir -p $(BUILD)
 
 $(BUILD)/matmul_sharemem: matmul_sharemem.cu
-	nvcc -O2 -o $@ $< -lm
+	nvcc $(NVCCFLAGS) -o $@ $< -lm
 
 $(BUILD)/matmul_blocksize32: matmul_blocksize32.cu
-	nvcc -O2 -o $@ $< -lm
+	nvcc $(NVCCFLAGS) -o $@ $< -lm
 
 $(BUILD)/matmul_fp16: matmul_fp16.cu
-	nvcc -O2 -arch=sm_70 -o $@ $< -lm
+	nvcc $(NVCCFLAGS) -arch=sm_70 -o $@ $< -lm
 
 $(BUILD)/matmul_cublas: matmul_cublas.cu
-	nvcc -O2 -o $@ $< -lcublas -lm
+	nvcc $(NVCCFLAGS) -o $@ $< -lcublas -lm
 
 $(BUILD)/matmul_tensorcore: matmul_tensorcore.cu
-	nvcc -O2 -arch=sm_70 -o $@ $< -lm
+	nvcc $(NVCCFLAGS) -arch=sm_70 -o $@ $< -lm
 
 clean:
 	rm -rf $(BUILD)
 
 .PHONY: all clean
+
