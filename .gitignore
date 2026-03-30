@@ -1,2 +1,15 @@
+# macOS
 .DS_Store
-.vscode
+
+# IDE
+.vscode/
+
+# 编译产物
+build/
+*.o
+*.a
+*.so
+
+# Nsight Compute profiling 数据
+*.ncu-rep
+*.nsys-rep
