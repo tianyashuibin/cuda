@@ -6,7 +6,7 @@ NVCCFLAGS := -O2 -lineinfo
 
 TARGETS := \
     $(BUILD)/matmul_sharemem \
-    $(BUILD)/matmul_blocksize32 \
+    $(BUILD)/matmul_reg_tiling \
     $(BUILD)/matmul_fp16 \
     $(BUILD)/matmul_cublas \
     $(BUILD)/matmul_tensorcore
@@ -19,7 +19,7 @@ $(BUILD):
 $(BUILD)/matmul_sharemem: matmul_sharemem.cu
 	nvcc $(NVCCFLAGS) -o $@ $< -lm
 
-$(BUILD)/matmul_blocksize32: matmul_blocksize32.cu
+$(BUILD)/matmul_reg_tiling: matmul_reg_tiling.cu
 	nvcc $(NVCCFLAGS) -o $@ $< -lm
 
 $(BUILD)/matmul_fp16: matmul_fp16.cu

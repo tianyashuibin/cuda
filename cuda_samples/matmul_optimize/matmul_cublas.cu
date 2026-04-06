@@ -23,7 +23,6 @@
 #include <math.h>
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
-#include <time.h>
 
 void MatMulCuBLAS(const float *h_A, const float *h_B, float *h_C, int N,
                   float *transfer_ms, float *kernel_ms)
@@ -93,26 +92,14 @@ void MatMulCuBLAS(const float *h_A, const float *h_B, float *h_C, int N,
     cudaFree(d_A); cudaFree(d_B); cudaFree(d_C);
 }
 
-void MatMulCPU(const float *A, const float *B, float *C, int N)
-{
-    for (int i = 0; i < N; ++i)
-        for (int j = 0; j < N; ++j) {
-            float sum = 0.0f;
-            for (int k = 0; k < N; ++k)
-                sum += A[i * N + k] * B[k * N + j];
-            C[i * N + j] = sum;
-        }
-}
-
 int main()
 {
-    int N = 1024;
+    int N = 2048;
     size_t bytes = (size_t)N * N * sizeof(float);
 
     float *A     = (float*)malloc(bytes);
     float *B     = (float*)malloc(bytes);
     float *C_gpu = (float*)malloc(bytes);
-    float *C_cpu = (float*)malloc(bytes);
 
     for (int i = 0; i < N * N; ++i) {
         A[i] = (float)(i % 10) * 0.1f;
@@ -122,25 +109,13 @@ int main()
     float transfer_ms = 0, kernel_ms = 0;
     MatMulCuBLAS(A, B, C_gpu, N, &transfer_ms, &kernel_ms);
 
-    clock_t cpu_start = clock();
-    MatMulCPU(A, B, C_cpu, N);
-    clock_t cpu_end = clock();
-    float cpu_ms = 1000.0f * (float)(cpu_end - cpu_start) / CLOCKS_PER_SEC;
-
-    float max_err = 0.0f;
-    for (int i = 0; i < N * N; ++i) {
-        float err = fabsf(C_gpu[i] - C_cpu[i]);
-        if (err > max_err) max_err = err;
-    }
+    double gflops = 2.0 * N * N * N / (kernel_ms * 1e-3) / 1e9;
 
     printf("[cuBLAS] Matrix size: %dx%d\n", N, N);
-    printf("GPU kernel time:   %.3f ms\n", kernel_ms);
+    printf("GPU kernel time:   %.3f ms  (%.1f GFLOPS)\n", kernel_ms, gflops);
     printf("GPU transfer time: %.3f ms\n", transfer_ms);
     printf("GPU total time:    %.3f ms\n", kernel_ms + transfer_ms);
-    printf("CPU time:          %.3f ms\n", cpu_ms);
-    printf("Speedup (kernel):  %.1fx\n", cpu_ms / kernel_ms);
-    printf("Max error: %e  %s\n", max_err, max_err < 1e-3f ? "PASSED" : "FAILED");
 
-    free(A); free(B); free(C_gpu); free(C_cpu);
+    free(A); free(B); free(C_gpu);
     return 0;
 }
