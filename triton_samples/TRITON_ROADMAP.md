@@ -158,6 +158,42 @@ print(triton.__version__)
 
 ---
 
+### Step 7: RMS Normalization `07_rmsnorm.py`
+
+**目标**：实现 LLaMA/Mistral/Gemma 使用的 RMSNorm，对比 LayerNorm
+
+**核心知识点**：
+- RMSNorm 公式：`y = x / sqrt(mean(x²) + eps) * w`（无 mean subtraction, 无 bias）
+- 比 LayerNorm 少一次 reduction，参数少一半
+- Forward + Backward 完整实现（含 autograd）
+- Backward 的数学推导：`dx = rrms * (dx_hat - x_hat * mean(dx_hat * x_hat))`
+
+**LLM 关联**：
+- 现代 LLM（LLaMA, Mistral, Gemma, Qwen）全部使用 RMSNorm 替代 LayerNorm
+- 推理时是典型的 memory-bound 算子，fusion 收益显著
+
+---
+
+### Step 8: Paged Attention `08_paged_attention.py`
+
+**目标**：理解 vLLM 的核心算子 — 分页 KV Cache 的 Attention 计算
+
+**核心知识点**：
+- **分页内存管理**：借鉴 OS 虚拟内存，KV Cache 按固定大小 page 分配
+- **Page Table 间接寻址**：逻辑页 → 物理 block 的映射
+- **Online Softmax + Paged KV 遍历**：逐页遍历，在线更新 softmax 统计量
+- **GQA 支持**：多个 Q head 共享一个 KV head（Grouped Query Attention）
+- **PagedKVCache 管理器**：分配、回收、碎片复用
+
+**为什么 Paged Attention 重要**：
+- 传统连续分配 max_seq_len → 内存浪费 50-90%
+- 分页 → 按需分配 → 内存利用率接近 100% → 更大 batch → 更高吞吐
+- vLLM, TensorRT-LLM, SGLang 等主流 serving 框架的基础
+
+**对标**：vLLM PagedAttention, FlashInfer
+
+---
+
 ## Auto-tuning：Triton 的独特优势
 
 Triton 内置 auto-tuning 框架，自动搜索最优超参数：
@@ -191,6 +227,8 @@ def matmul_kernel(...):
 | flash_attention | seq=2048, d=64 | | | - | |
 | layernorm | 4096×4096 | | | - | |
 | quantize_matmul | 4096×4096 | | | | |
+| rmsnorm | 4096×4096 | | | - | |
+| paged_attention | seq=4096, d=128 | | | - | |
 
 ---
 

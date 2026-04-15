@@ -4,7 +4,9 @@
 >
 > 时间预算：工作日 2h/天 + 周末 5h ≈ **15h/周**
 >
-> 背景：后端开发（推荐系统），有 C++ 功底，GPU 架构已有基础理解
+> 起始日期：**2026-04-14（第 1 周）**，预计完成日期：2026-08-31（第 20 周）
+>
+> 背景：后端开发（推荐系统），有 C++ 功底，GPU 架构已有基础理解。2025-04 转入推荐系统，有一年模型推理和性能优化实操经验。vLLM Python 层源码已读过一遍。
 
 ---
 
@@ -27,14 +29,15 @@
 | CUTLASS / CuTe | 未接触，这是阶段二最核心的内容 | 阶段二核心 |
 | FlashAttention CUDA 源码 | Triton 版写过，但 CUDA 原版未读 | 阶段二核心 |
 | 量化 GEMM（CUDA 级） | Triton 版写过，CUDA 级的 Marlin/W4A16 kernel 未接触 | 阶段二 |
-| 推理引擎源码 | vLLM / SGLang 未深入 | 阶段二 |
+| 推理引擎源码（Python 层） | vLLM 主要 Python 源码已读过一遍（scheduler、投机解码、PD 分离等），结合 deepwiki 原理，约 2026 年初完成，中断约 3 个月 | 阶段二（部分完成） |
+| 推理引擎源码（C++ / kernel 层） | vLLM attention backend C++ 层、quantization 模块如何调用底层 kernel 未深入 | 阶段二 |
 | 开源贡献 | 无 kernel 级 PR | 阶段二毕业标志 |
 | cuBLAS/cuBLASLt 高级用法 | 混合精度、epilogue fusion 等 | 阶段一补全 |
 
 ### 结论
 
 > **阶段一已完成约 80%**，剩余 cuBLASLt 高级用法需补全。
-> 阶段二从零开始，是接下来的主要战场。
+> 阶段二已有部分基础：vLLM Python 层源码读过一遍，但中断 3 个月需要接回；C++/kernel 层和 CUTLASS/FlashAttention 源码从零开始，是接下来的主要战场。
 
 ---
 
@@ -197,17 +200,24 @@
 
 ### 第四阶段：推理引擎源码 + 开源贡献（第 15-20 周）
 
-#### 第 15-16 周：vLLM 源码阅读
+#### 第 15-16 周：vLLM 深入 — C++/kernel 层 + 接回中断
 
-- clone vLLM，跑通一个基本的 serving demo（3h）
-- 读 vLLM 的 model runner：理解一次 forward 的完整调用链（8h）
-- 读 vLLM 的 attention backend：理解如何调用 FlashInfer / FlashAttention（7h）
-- 读 vLLM 的 quantization 模块：理解如何集成 Marlin / AWQ kernel（5h）
-- 读 vLLM 的 scheduler：理解 continuous batching（4h）
-- 整理笔记（3h）
+> 注意：Python 层主要模块（scheduler、投机解码、PD 分离）已于 2026 年初读过一遍。本阶段不需要从头开始，重点是接回中断、对照最新版本、并向下深入到 C++/kernel 层。
+
+**第 15 周：接回中断 + attention backend 深入（15h）**
+- 对照当前 vLLM 版本和 3 个月前读过的代码，看 scheduler / speculative decoding 的主要 diff，快速刷新记忆（3h）
+- 深入 vLLM 的 attention backend C++ 层：理解 Python 调用到 FlashInfer / FlashAttention CUDA kernel 的完整链路（8h）
+- 对照前面 FlashAttention 源码阅读的成果，理解 vLLM 是如何选择和调用不同 attention kernel 的（4h）
+
+**第 16 周：quantization 模块 + 系统级理解（15h）**
+- 读 vLLM 的 quantization 模块：理解如何集成 Marlin / AWQ kernel，权重加载和 dequantize 的调用链路（6h）
+- 对照前面 Marlin kernel 源码阅读的成果，从 vLLM 入口追踪到底层 kernel 调用（4h）
+- 串联整条链路：一个请求从进入 scheduler → model runner → attention backend → kernel → 返回结果的完整路径（3h）
+- 整理笔记（2h）
 
 **产出：**
-- `notes/vllm_architecture.md` — vLLM 核心模块分析
+- `notes/vllm_architecture.md` — 更新版，重点覆盖 C++/kernel 层调用链路
+- 能画出 vLLM 从 Python API 到 CUDA kernel 的完整调用图
 
 #### 第 17-18 周：找到贡献切入点 + 提 PR
 
@@ -353,3 +363,11 @@
 - [ ] 里程碑 3：量化 Kernel — 目标日期：____
 - [ ] 里程碑 4：开源贡献 PR — 目标日期：____
 - [ ] 里程碑 5：端到端优化案例 — 目标日期：____
+
+---
+
+## 十、方向前景与转型背景分析
+
+> 详见独立文档：[CAREER_ANALYSIS.md](CAREER_ANALYSIS.md)
+>
+> 包含：方向前景、行业人才时间线、转型时机评估、后端经验迁移价值、可信度说明、面试策略

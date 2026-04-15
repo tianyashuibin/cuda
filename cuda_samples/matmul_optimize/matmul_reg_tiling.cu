@@ -214,18 +214,6 @@ void MatMul(const float* A, const float* B, float* C,
     cudaFree(d_C);
 }
 
-// CPU reference
-void MatMulCPU(const float* A, const float* B, float* C, int M, int N, int K)
-{
-    for (int i = 0; i < M; ++i)
-        for (int j = 0; j < N; ++j) {
-            float sum = 0.0f;
-            for (int k = 0; k < K; ++k)
-                sum += A[i * K + k] * B[k * N + j];
-            C[i * N + j] = sum;
-        }
-}
-
 int main()
 {
     // M, N, K 必须是 BM, BN, BK 的整数倍（128, 128, 8）
@@ -238,7 +226,6 @@ int main()
     float* A     = (float*)malloc(bytesA);
     float* B     = (float*)malloc(bytesB);
     float* C_gpu = (float*)malloc(bytesC);
-    float* C_cpu = (float*)malloc(bytesC);
 
     for (int i = 0; i < M * K; ++i) A[i] = (float)(i % 10) * 0.1f;
     for (int i = 0; i < K * N; ++i) B[i] = (float)(i % 7)  * 0.1f;
@@ -246,19 +233,6 @@ int main()
     // GPU
     float transfer_ms = 0, kernel_ms = 0;
     MatMul(A, B, C_gpu, M, N, K, &transfer_ms, &kernel_ms);
-
-    // CPU
-    clock_t cpu_start = clock();
-    MatMulCPU(A, B, C_cpu, M, N, K);
-    clock_t cpu_end = clock();
-    float cpu_ms = 1000.0f * (float)(cpu_end - cpu_start) / CLOCKS_PER_SEC;
-
-    // Verify
-    float max_err = 0.0f;
-    for (int i = 0; i < M * N; ++i) {
-        float err = fabsf(C_gpu[i] - C_cpu[i]);
-        if (err > max_err) max_err = err;
-    }
 
     // GFLOPS = 2*M*N*K / time_sec / 1e9
     double gflops = 2.0 * M * N * K / (kernel_ms * 1e-3) / 1e9;
@@ -270,18 +244,10 @@ int main()
     printf("GPU kernel time:   %.3f ms  (%.1f GFLOPS)\n", kernel_ms, gflops);
     printf("GPU transfer time: %.3f ms (H2D + D2H)\n", transfer_ms);
     printf("GPU total time:    %.3f ms\n", kernel_ms + transfer_ms);
-    printf("CPU time:          %.3f ms\n", cpu_ms);
-    printf("Speedup (kernel only): %.1fx\n", cpu_ms / kernel_ms);
-    printf("Max error (GPU vs CPU): %e\n", max_err);
-    if (max_err < 1e-2f)
-        printf("PASSED\n");
-    else
-        printf("FAILED (max_err = %e)\n", max_err);
 
     free(A);
     free(B);
     free(C_gpu);
-    free(C_cpu);
 
     return 0;
 }

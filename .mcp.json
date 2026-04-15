@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "/Users/beeman/.local/bin/uvx",
+      "args": ["mcp-server-fetch"]
+    }
+  }
+}
